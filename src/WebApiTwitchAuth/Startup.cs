@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using WebApiTwitchAuth.Authorization;
 
 namespace WebApiTwitchAuth
 {
@@ -26,6 +27,15 @@ namespace WebApiTwitchAuth
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+
+            services.AddAuthentication("Twitch")
+                .AddScheme<TwitchAuthenticationOptions, TwitchAuthenticationHandler>("Twitch", options =>
+                {
+                    options.ClientId = Configuration["Twitch:ClientId"];
+                    options.UserInformationEndpoint = "https://id.twitch.tv/oauth2/userinfo";
+                });
+
+                services.AddHttpClient();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,6 +50,7 @@ namespace WebApiTwitchAuth
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
