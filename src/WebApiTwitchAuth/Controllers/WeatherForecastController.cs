@@ -43,6 +43,7 @@ namespace WebApiTwitchAuth.Controllers
         public IEnumerable<WeatherForecast> GetAuth()
         {
             var username = User.Claims.First(c => c.Type == ClaimTypes.Name).Value;
+            var scopes = User.Claims.Where(c => c.Type == "TwitchScope").Select(c => c.Value).ToArray();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -50,7 +51,8 @@ namespace WebApiTwitchAuth.Controllers
                 Username = username,
                 Date = DateTime.Now.AddDays(index),
                 TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
+                Summary = Summaries[rng.Next(Summaries.Length)],
+                Scopes = scopes,
             })
             .ToArray();
         }

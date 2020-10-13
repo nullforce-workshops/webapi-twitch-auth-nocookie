@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -69,7 +70,7 @@ namespace WebApiTwitchAuth.Authorization
 
         private async Task<AuthenticateResult> ValidateToken(string token)
         {
-            // Validate the token with Twitch
+            // Validate the token with Twitch via User Information Endpoint
             using var request = new HttpRequestMessage(HttpMethod.Get, Options.UserInformationEndpoint);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -92,9 +93,9 @@ namespace WebApiTwitchAuth.Authorization
                 throw new HttpRequestException("An error occurred while retrieving the user profile.");
             }
 
-            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            var audience = payload.RootElement.GetProperty("aud").GetString();
-            var issuer = payload.RootElement.GetProperty("iss").GetString();
+            var userinfo = await JsonSerializer.DeserializeAsync<TwitchGetUserInfoResponse>(await response.Content.ReadAsStreamAsync());
+            var audience = userinfo.Audience;
+            var issuer = userinfo.Issuer;
 
             if (Options.ValidateAudience && Options.ValidAudience != audience)
             {
@@ -106,8 +107,23 @@ namespace WebApiTwitchAuth.Authorization
                 return AuthenticateResult.Fail("Unauthorized");
             }
 
-            var userid = payload.RootElement.GetProperty("sub").GetString();
-            var username = payload.RootElement.GetProperty("preferred_username").GetString();
+            var userid = userinfo.UserId;
+            var username = userinfo.PreferredUsername;
+
+            // Get token scopes with Twitch via the Token Validation Endpoint
+            using var tokenValidationRequest = new HttpRequestMessage(HttpMethod.Get, Options.TokenValidationEndpoint);
+            tokenValidationRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            tokenValidationRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var tokenValidationResponse = await client.SendAsync(tokenValidationRequest);
+
+            var scopes = new string[] { };
+
+            if (tokenValidationResponse.IsSuccessStatusCode)
+            {
+                var tokeninfo = await JsonSerializer.DeserializeAsync<TwitchValidationResponse>(await tokenValidationResponse.Content.ReadAsStreamAsync());
+                scopes = tokeninfo.Scopes;
+            }
 
             // Extract the UserInfo from the Twitch UserInformation endpoint
             // and create a principal
@@ -116,6 +132,8 @@ namespace WebApiTwitchAuth.Authorization
                 new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.NameIdentifier, userid),
             };
+
+            claims.AddRange(scopes.Select(s => new Claim("TwitchScope", s)));
 
             var identity = new ClaimsIdentity(claims, Scheme.Name);
             var principal = new GenericPrincipal(identity, null);

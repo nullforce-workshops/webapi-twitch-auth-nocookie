@@ -7,6 +7,8 @@ namespace WebApiTwitchAuth.Authorization
         public string ClientId { get; set; }
         public string UserInformationEndpoint { get; set; } = "https://id.twitch.tv/oauth2/userinfo";
 
+        public string TokenValidationEndpoint { get; set; } = "https://id.twitch.tv/oauth2/validate";
+
         public bool ValidateAudience { get; set; }
         public string ValidAudience { get; set; }
 

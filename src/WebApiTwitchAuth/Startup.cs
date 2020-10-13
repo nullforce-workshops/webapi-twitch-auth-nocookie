@@ -1,15 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using WebApiTwitchAuth.Authorization;
 
 namespace WebApiTwitchAuth
@@ -32,7 +25,6 @@ namespace WebApiTwitchAuth
                 .AddScheme<TwitchAuthenticationOptions, TwitchAuthenticationHandler>("Twitch", options =>
                 {
                     options.ClientId = Configuration["Twitch:ClientId"];
-                    options.UserInformationEndpoint = "https://id.twitch.tv/oauth2/userinfo";
                 });
 
                 services.AddHttpClient();
