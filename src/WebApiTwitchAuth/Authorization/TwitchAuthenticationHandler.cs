@@ -121,12 +121,12 @@ namespace WebApiTwitchAuth.Authorization
 
             if (tokenValidationResponse.IsSuccessStatusCode)
             {
-                var tokeninfo = await JsonSerializer.DeserializeAsync<TwitchValidationResponse>(await tokenValidationResponse.Content.ReadAsStreamAsync());
+                var tokeninfo = await JsonSerializer.DeserializeAsync<TwitchValidationResponse>(
+                    await tokenValidationResponse.Content.ReadAsStreamAsync());
                 scopes = tokeninfo.Scopes;
             }
 
-            // Extract the UserInfo from the Twitch UserInformation endpoint
-            // and create a principal
+            // Extract the UserInfo from the Twitch UserInformation endpoint and create a principal
             var claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.Name, username),

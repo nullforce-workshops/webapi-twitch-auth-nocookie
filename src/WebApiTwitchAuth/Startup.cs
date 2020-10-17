@@ -27,7 +27,9 @@ namespace WebApiTwitchAuth
                     options.ClientId = Configuration["Twitch:ClientId"];
                 });
 
-                services.AddHttpClient();
+            services.AddHttpClient();
+
+            services.AddSwaggerGen();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -37,6 +39,16 @@ namespace WebApiTwitchAuth
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            // Serve an OpenAPI JSON
+            app.UseSwagger();
+
+            // Serve Swagger UI
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Weather Forecast API v1");
+                c.RoutePrefix = string.Empty;
+            });
 
             app.UseHttpsRedirection();
 
